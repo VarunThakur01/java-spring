@@ -1,0 +1,293 @@
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import javax.swing.Timer;
+//This Code Belongs to Arpit Sharma
+public class InteractiveQuizSystem extends JFrame implements ActionListener {
+
+    private JLabel questionLabel, scoreLabel, questionNumberLabel;
+    private JRadioButton[] options = new JRadioButton[4];
+    private ButtonGroup bg;
+    private JButton nextButton, previousButton;
+    private JPanel mainPanel, headerPanel, optionsPanel, buttonPanel;
+    private int currentQuestionIndex = 0, score = 0;
+    private List<QuizQuestion> quizQuestions;
+    private List<Integer> questionOrder;
+    private boolean answered = false;
+    private Timer feedbackTimer;
+//This Code Belongs to Arpit Sharma
+    static class QuizQuestion {
+        String question;
+        String[] options;
+        int correctAnswerIndex;
+
+        public QuizQuestion(String question, String[] options, int correctAnswerIndex) {
+            this.question = question;
+            this.options = options;
+            this.correctAnswerIndex = correctAnswerIndex;
+        }
+    }
+//This Code Belongs to Arpit Sharma
+    public InteractiveQuizSystem() {
+        // Sample Questions
+        quizQuestions = new ArrayList<>();
+        quizQuestions.add(new QuizQuestion("Which language is used for Android development?", new String[]{"Python", "Java", "C#", "Kotlin"}, 1));
+        quizQuestions.add(new QuizQuestion("Which company developed Java?", new String[]{"Microsoft", "Apple", "Sun Microsystems", "Google"}, 2));
+        quizQuestions.add(new QuizQuestion("What is the extension of Java files?", new String[]{".jav", ".class", ".js", ".java"}, 3));
+        quizQuestions.add(new QuizQuestion("Which keyword is used to inherit a class?", new String[]{"implement", "extends", "inherits", "interface"}, 1));
+        quizQuestions.add(new QuizQuestion("What is the default value of a boolean variable in Java?", new String[]{"true", "false", "null", "0"}, 1));
+
+        questionOrder = new ArrayList<>();
+        for (int i = 0; i < quizQuestions.size(); i++) {
+            questionOrder.add(i);
+        }
+        Collections.shuffle(questionOrder, new Random());
+
+        setTitle("Interactive Quiz System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(700, 500);
+        setLocationRelativeTo(null);
+
+        mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(245, 245, 245));
+        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        add(mainPanel);
+
+        headerPanel = new JPanel();
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        headerPanel.setBackground(new Color(52, 152, 219));
+        headerPanel.setBorder(new EmptyBorder(15, 15, 20, 15));
+
+        questionNumberLabel = new JLabel("Question 1/" + quizQuestions.size());
+        questionNumberLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        questionNumberLabel.setForeground(Color.WHITE);
+        questionNumberLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        headerPanel.add(questionNumberLabel);
+        headerPanel.add(Box.createVerticalStrut(10));
+
+        questionLabel = new JLabel("Welcome to the Quiz!");
+        questionLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        questionLabel.setForeground(Color.WHITE);
+        questionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Use HTML for text wrapping in JLabel:
+        questionLabel.setText("<html><body style='width: 550px'>Welcome to the Quiz!</body></html>");
+        headerPanel.add(questionLabel);
+
+        scoreLabel = new JLabel("Score: 0/" + quizQuestions.size());
+        scoreLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        scoreLabel.setForeground(new Color(255, 255, 204));
+        scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        headerPanel.add(Box.createVerticalStrut(10));
+        headerPanel.add(scoreLabel);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
+        optionsPanel = new JPanel(new GridLayout(4, 1, 10, 15));
+        optionsPanel.setBackground(new Color(245, 245, 245));
+        optionsPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
+
+        bg = new ButtonGroup();
+        for (int i = 0; i < 4; i++) {
+            options[i] = createStyledRadioButton("");
+            bg.add(options[i]);
+            optionsPanel.add(options[i]);
+        }
+        mainPanel.add(optionsPanel, BorderLayout.CENTER);
+
+        buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
+        buttonPanel.setBackground(new Color(245, 245, 245));
+        buttonPanel.setBorder(new EmptyBorder(0, 0, 15, 0));
+
+        previousButton = createStyledButton("Previous");
+        previousButton.addActionListener(e -> {
+            if (currentQuestionIndex > 0 && !answered) {
+                currentQuestionIndex--;
+                loadQuestion();
+            } else if (currentQuestionIndex > 0 && answered) {
+                currentQuestionIndex--;
+                loadQuestion();
+                answered = false;
+                nextButton.setText("Next");
+                enableOptions();
+                resetOptionColors();
+            }
+        });
+        buttonPanel.add(previousButton);
+
+        nextButton = createStyledButton("Next");
+        nextButton.addActionListener(this);
+        buttonPanel.add(nextButton);
+
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        loadQuestion();
+        setVisible(true);
+    }
+//This Code Belongs to Arpit Sharma
+    private JRadioButton createStyledRadioButton(String text) {
+        JRadioButton radioButton = new JRadioButton(text);
+        radioButton.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        radioButton.setForeground(new Color(66, 66, 66));
+        radioButton.setBackground(new Color(255, 255, 255));
+        radioButton.setFocusPainted(false);
+        radioButton.setBorder(new LineBorder(new Color(220, 220, 220), 1, true));
+        radioButton.setOpaque(true);
+        radioButton.setIconTextGap(10);
+        radioButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        radioButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (!radioButton.isSelected()) {
+                    radioButton.setBackground(new Color(230, 230, 230));
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (!radioButton.isSelected()) {
+                    radioButton.setBackground(new Color(255, 255, 255));
+                }
+            }
+        });
+        return radioButton;
+    }
+//This Code Belongs to Arpit Sharma
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        button.setBackground(new Color(52, 152, 219));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(new LineBorder(new Color(41, 128, 185), 2, true));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setPreferredSize(new Dimension(140, 45));
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(41, 128, 185));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(new Color(52, 152, 219));
+            }
+        });
+        return button;
+    }
+//This Code Belongs to Arpit Sharma
+    private void loadQuestion() {
+        if (currentQuestionIndex < quizQuestions.size()) {
+            int actualIndex = questionOrder.get(currentQuestionIndex);
+            QuizQuestion currentQ = quizQuestions.get(actualIndex);
+            // Use HTML for text wrapping:
+            String wrappedQuestion = "<html><body style='width: 550px'>" + currentQ.question + "</body></html>";
+            questionLabel.setText(wrappedQuestion);
+
+            questionNumberLabel.setText("Question " + (currentQuestionIndex + 1) + "/" + quizQuestions.size());
+            for (int i = 0; i < 4; i++) {
+                options[i].setText(currentQ.options[i]);
+                options[i].setSelected(false);
+                options[i].setEnabled(true);
+            }
+            resetOptionColors();
+            if (currentQuestionIndex == 0) {
+                previousButton.setEnabled(false);
+            } else {
+                previousButton.setEnabled(true);
+            }
+            nextButton.setText(currentQuestionIndex == quizQuestions.size() - 1 ? "Finish" : "Next");
+            answered = false;
+        } else {
+            showResult();
+        }
+    }
+//This Code Belongs to Arpit Sharma
+    private void resetOptionColors() {
+        for (JRadioButton option : options) {
+            option.setForeground(new Color(66, 66, 66));
+            option.setBackground(Color.WHITE);
+        }
+    }
+
+    private void disableOptions() {
+        for (JRadioButton option : options) {
+            option.setEnabled(false);
+        }
+    }
+
+    private void enableOptions() {
+        for (JRadioButton option : options) {
+            option.setEnabled(true);
+        }
+    }
+
+    private void showResult() {
+        JOptionPane.showMessageDialog(this, "Quiz Over! Your final score: " + score + "/" + quizQuestions.size(), "Quiz Result", JOptionPane.INFORMATION_MESSAGE);
+        System.exit(0);
+    }
+//This Code Belongs to Arpit Sharma
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == nextButton) {
+            if (!answered) {
+                int selectedOptionIndex = -1;
+                for (int i = 0; i < 4; i++) {
+                    if (options[i].isSelected()) {
+                        selectedOptionIndex = i;
+                        break;
+                    }
+                }
+
+                if (selectedOptionIndex == -1) {
+                    JOptionPane.showMessageDialog(this, "Please select an answer.", "Alert", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                int actualIndex = questionOrder.get(currentQuestionIndex);
+                QuizQuestion currentQ = quizQuestions.get(actualIndex);
+                boolean isCorrect = (selectedOptionIndex == currentQ.correctAnswerIndex);
+
+                if (isCorrect) {
+                    score++;
+                    options[selectedOptionIndex].setBackground(new Color(144, 238, 144));
+                } else {
+                    options[selectedOptionIndex].setBackground(new Color(255, 160, 122));
+                    options[currentQ.correctAnswerIndex].setBackground(new Color(144, 238, 144));
+                }
+                scoreLabel.setText("Score: " + score + "/" + quizQuestions.size());
+                answered = true;
+                disableOptions();
+
+                if (currentQuestionIndex < quizQuestions.size() - 1) {
+                    feedbackTimer = new Timer(1500, ev -> {
+                        currentQuestionIndex++;
+                        loadQuestion();
+                    });
+                    feedbackTimer.setRepeats(false);
+                    feedbackTimer.start();
+                } else {
+                    showResult();
+                }
+                nextButton.setText("Next");
+            } else {
+                if (currentQuestionIndex < quizQuestions.size() - 1) {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                } else {
+                    showResult();
+                }
+            }
+        }
+    }
+//This Code Belongs to Arpit Sharma
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new InteractiveQuizSystem());
+    }
+}
+//This Code Belongs to Arpit Sharma
